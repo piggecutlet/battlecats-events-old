@@ -6,6 +6,13 @@ on:
   schedule:
     - cron: "0 10 * * *"
   workflow_dispatch:
+    inputs:
+      locale:
+        type: choice
+        options: [all, jp, kr, en, tw]
+      type:
+        type: choice
+        options: [all, sale, gatya, item]
 
 permissions:
   contents: write
@@ -21,9 +28,15 @@ jobs:
         run: pip install bcedd
 
       - name: Download
-        run: python -m bcedd -c jp kr en tw -o .
+        env:
+          LOCALE: ${{ inputs.locale || 'all' }}
+          TYPE: ${{ inputs.type || 'all' }}
+        run: |
+          if [ "$LOCALE" = all ]; then LOCALES="jp kr en tw"; else LOCALES="$LOCALE"; fi
+          if [ "$TYPE" = all ]; then FILES="sale.tsv gatya.tsv item.tsv"; else FILES="$TYPE.tsv"; fi
+          python -m bcedd -c $LOCALES -f $FILES -o .
 
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "update: event data"
+          commit_message: "update"
